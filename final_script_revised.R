@@ -287,9 +287,9 @@ save.image("basic_data.RData")
     
     ###hubgenes & TFs    10:7.8
     {
-      test1<-cbind(TCGA.BRCA.htseq_counts.tsv.gz[rownames(BRCA.mrna.select),g$name[g$type=="TF"]],BRCA.im.select)
-      test2<-cbind(TCGA.BRCA.htseq_counts.tsv.gz[rownames(BRCA.mrna.select),g$name[g$type=="Gene"]],BRCA.im.select)
-      cor<-corr.test(as.matrix(test1),as.matrix(test2[,rev(colnames(test2))]),method = "spearman")
+      data1<-cbind(TCGA.BRCA.htseq_counts.tsv.gz[rownames(BRCA.mrna.select),g$name[g$type=="TF"]],BRCA.im.select)
+      data2<-cbind(TCGA.BRCA.htseq_counts.tsv.gz[rownames(BRCA.mrna.select),g$name[g$type=="Gene"]],BRCA.im.select)
+      cor<-corr.test(as.matrix(data1),as.matrix(data2[,rev(colnames(data2))]),method = "spearman")
       p<-ggcorrplot(cor$r,p.mat = cor$p,hc.order = F,outline.color = "white",
                     ggtheme = theme_bw(),sig.level = 0.05,insig = "blank",lab_size = 3,digits = 1,
                     colors = c("#6D9EC1","white","#E46726"),lab = T)+
@@ -318,9 +318,9 @@ save.image("basic_data.RData")
       g<-g[!(is.na(g) | g=="")]
       data<-TCGA.BRCA.htseq_counts.tsv.gz[rownames(BRCA.mrna.select),g]
       
-      test1<-BRCA.im.select
-      test2<-TCGA.BRCA.htseq_counts.tsv.gz[rownames(BRCA.mrna.select),head(g,50)]
-      cor<-corr.test(as.matrix(test2),as.matrix(test1[,rev(colnames(test1))]),method = "spearman")
+      data1<-BRCA.im.select
+      data2<-TCGA.BRCA.htseq_counts.tsv.gz[rownames(BRCA.mrna.select),head(g,50)]
+      cor<-corr.test(as.matrix(data2),as.matrix(data1[,rev(colnames(data1))]),method = "spearman")
       p<-ggcorrplot(cor$r,hc.order = F,outline.color = "white",
                     ggtheme = theme_bw(),sig.level = 0.05,insig = "blank",
                     colors = c("#6D9EC1","white","#E46726"))+
@@ -686,15 +686,6 @@ save.image("basic_data.RData")
 
 
 ##verification
-###cptac
-load("basic_data.RData")
-rm(list=ls()[!ls()=="gene"])
-colnames(gene)<-str_to_lower(colnames(gene))
-cptac<- read.delim("rawdata/CPTAC2_Breast_Prospective_Collection_BI_Proteome.tmt10.tsv", row.names=1)
-cptac[is.na(cptac)]<-0
-cptac<-cptac[4:nrow(cptac),1:(ncol(cptac)-6)]
-cptac<-cptac[,grep("*.Unshared.Log.Ratio",colnames(cptac),invert = T)]
-cptac<-t(cptac)
 
 ###protein
 protein<-read.delim("rawdata/new.protein.txt", row.names=1)
@@ -726,88 +717,23 @@ for (model in c("module3","module4","module7","module11","module31")) {
   
   ###hubgenes & TFs    10:7.8
   {
-    test1<-cbind(protein[rownames(protein),intersect(g$name[g$type=="TF"],colnames(protein))],BRCA.im.select,pca[,model])
-    colnames(test1)[ncol(test1)]<-"eigengene"
-    test2<-cbind(protein[rownames(protein),intersect(g$name[g$type=="Gene"],colnames(protein))],BRCA.im.select,pca[,model])
-    colnames(test2)[ncol(test2)]<-"eigengene"
-    cor<-corr.test(as.matrix(test1),as.matrix(test2[,rev(colnames(test2))]),method = "spearman")
+    data1<-cbind(protein[rownames(protein),intersect(g$name[g$type=="TF"],colnames(protein))],BRCA.im.select,pca[,model])
+    colnames(data1)[ncol(data1)]<-"Eigengene"
+    data2<-cbind(protein[rownames(protein),intersect(g$name[g$type=="Gene"],colnames(protein))],BRCA.im.select,pca[,model])
+    colnames(data2)[ncol(data2)]<-"Eigengene"
+    cor<-corr.test(as.matrix(data1),as.matrix(data2[,rev(colnames(data2))]),method = "spearman")
     p<-ggcorrplot(cor$r,p.mat = cor$p,hc.order = F,outline.color = "white",
                   ggtheme = theme_bw(),sig.level = 0.05,insig = "blank",lab_size = 3,digits = 1,
                   colors = c("#6D9EC1","white","#E46726"),lab = T)+
-      theme(axis.text.x = element_text(color = rep(c("#C24294","red"),c((ncol(test1)-15),15))),axis.text.y = element_text(color = rep(c("red","#4EADEA"),c(15,(ncol(test2)-15)))),axis.text.x.top = element_text(hjust = 0,vjust = 0))+
+      theme(axis.text.x = element_text(color = rep(c("#C24294","red"),c((ncol(data1)-15),15))),axis.text.y = element_text(color = rep(c("red","#4EADEA"),c(15,(ncol(data2)-15)))),axis.text.x.top = element_text(hjust = 0,vjust = 0))+
       scale_x_discrete(position = "top")
     ggsave(paste("verification/",model,"_image_protein_heatmap.pdf",sep = ""),p,width = 10,height = 7.8)
   }
 }
 
 ### gse dataset
-GSE196666 <- read.delim("rawdata/GSE196666_STAR.counts.WDR5.txt", row.names=1)
-GSE196666<-GSE196666[!duplicated(GSE196666$hgnc),]
-rownames(GSE196666)<-GSE196666$hgnc;GSE196666<-GSE196666[,-ncol(GSE196666)]
-GSE196666<-log2(GSE196666+1)
-GSE196666<-t(GSE196666)
-
-tmp<-list()
-for (model in c("module3","module4","module7","module11","module31")) {
-  TFs <- read.delim(paste("tf/",model,".tsv",sep = ""))%>%head(.,10)
-  TFs$Library<-"TF"
-  hubgene<-read.table(paste("ppi/",model,"_cytohubba.csv",sep = ""),skip = 1,sep = ",",header = T)[,2]%>%as.data.frame(.)
-  hubgene$Library<-"Gene"
-  
-  tmp[[model]]<-data.frame(name=c(hubgene$.,TFs$TF),type=c(hubgene$Library,TFs$Library),model=model)
-  g<-tmp[[model]]
-  g<-g[order(g$type),]
-  
-  ###hubgenes & TFs    10:7.8
-  {
-    test1<-GSE196666[,intersect(g$name[g$type=="TF"],colnames(GSE196666))]
-    
-    test2<-GSE196666[,intersect(g$name[g$type=="Gene"],colnames(GSE196666))]
-    cor<-corr.test(as.matrix(test1),as.matrix(test2[,rev(colnames(test2))]),method = "spearman")
-    p<-ggcorrplot(cor$r,p.mat = cor$p,hc.order = F,outline.color = "white",
-                  ggtheme = theme_bw(),sig.level = 0.05,insig = "blank",lab_size = 3,digits = 1,
-                  colors = c("#6D9EC1","white","#E46726"),lab = T)+
-      theme(axis.text.x = element_text(color = "#C24294"),axis.text.y = element_text(color = "#4EADEA"),axis.text.x.top = element_text(hjust = 0,vjust = 0))+
-      scale_x_discrete(position = "top")
-    ggsave(paste("verification/",model,"_gse196666_gene_heatmap.pdf",sep = ""),p,width = 10,height = 7.8)
-  }
-}
-
-### gse dataset
-GSE212143 <- read_excel("rawdata/GSE212143_15_breast_cancer_cell_lines_RNAseq.xlsx")
-GSE212143<-GSE212143[!duplicated(GSE212143$gene_short_name),]
-GSE212143<-as.data.frame(GSE212143)
-rownames(GSE212143)<-GSE212143$gene_short_name
-GSE212143<-GSE212143[,-c(1:2)]
-GSE212143<-t(GSE212143)
-GSE212143<-apply(GSE212143, 2,as.numeric)
-tmp<-list()
-for (model in c("module3","module4","module7","module11","module31")) {
-  TFs <- read.delim(paste("tf/",model,".tsv",sep = ""))%>%head(.,10)
-  TFs$Library<-"TF"
-  hubgene<-read.table(paste("ppi/",model,"_cytohubba.csv",sep = ""),skip = 1,sep = ",",header = T)[,2]%>%as.data.frame(.)
-  hubgene$Library<-"Gene"
-  
-  tmp[[model]]<-data.frame(name=c(hubgene$.,TFs$TF),type=c(hubgene$Library,TFs$Library),model=model)
-  g<-tmp[[model]]
-  g<-g[order(g$type),]
-  
-  ###hubgenes & TFs    10:7.8
-  {
-    test1<-GSE212143[,intersect(g$name[g$type=="TF"],colnames(GSE212143))]
-    
-    test2<-GSE212143[,intersect(g$name[g$type=="Gene"],colnames(GSE212143))]
-    cor<-corr.test(as.matrix(test1),as.matrix(test2[,rev(colnames(test2))]),method = "spearman")
-    p<-ggcorrplot(cor$r,p.mat = cor$p,hc.order = F,outline.color = "white",
-                  ggtheme = theme_bw(),sig.level = 0.05,insig = "blank",lab_size = 3,digits = 1,
-                  colors = c("#6D9EC1","white","#E46726"),lab = T)+
-      theme(axis.text.x = element_text(color = "#C24294"),axis.text.y = element_text(color = "#4EADEA"),axis.text.x.top = element_text(hjust = 0,vjust = 0))+
-      scale_x_discrete(position = "top")
-    ggsave(paste("verification/",model,"_gse212143_gene_heatmap.pdf",sep = ""),p,width = 10,height = 7.8)
-  }
-}
-
-### gse dataset
+load("basic_data.RData")
+rm(list=ls()[!ls()=="gene"])
 GSE211729 <- read.delim("rawdata/GSE211729_series_matrix.txt")
 rownames(GSE211729)<-GSE211729$Sample_source_name_ch1
 GSE211729<-GSE211729[,grep("Breast.Tumor.*",colnames(GSE211729))]
@@ -815,7 +741,7 @@ colnames(GSE211729)<-GSE211729[1,]
 GSE211729<-GSE211729[-1,]
 rownames(GSE211729)<-gsub("_at","",rownames(GSE211729))
 
-ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
+ensembl <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
 symbol<-getBM(attributes = c('ensembl_gene_id', 'hgnc_symbol'),
               filters = 'ensembl_gene_id',
               values = rownames(GSE211729), 
@@ -827,6 +753,17 @@ rownames(GSE211729)<-symbol$hgnc_symbol
 GSE211729<-t(GSE211729)
 GSE211729<-apply(GSE211729, 2, as.numeric)
 tmp<-list()
+gene<-as.data.frame(gene)
+pca<-list()
+for (i in 1:ncol(gene)) {
+  x<-gene[,i]
+  data<-GSE211729[,intersect(x,colnames(GSE211729))[intersect(x,colnames(GSE211729))!=""]]
+  test<-prcomp(data)
+  pca[[i]]<-test$x[,1]
+}
+pca<-as.data.frame(pca)
+colnames(pca)<-paste("module",1:46,sep = "")
+
 for (model in c("module3","module4","module7","module11","module31")) {
   TFs <- read.delim(paste("tf/",model,".tsv",sep = ""))%>%head(.,10)
   TFs$Library<-"TF"
@@ -839,10 +776,11 @@ for (model in c("module3","module4","module7","module11","module31")) {
   
   ###hubgenes & TFs    10:7.8
   {
-    test1<-GSE211729[,intersect(g$name[g$type=="TF"],colnames(GSE211729))]
-    
-    test2<-GSE211729[,intersect(g$name[g$type=="Gene"],colnames(GSE211729))]
-    cor<-corr.test(as.matrix(test1),as.matrix(test2[,rev(colnames(test2))]),method = "spearman")
+    data1<-cbind(GSE211729[,intersect(g$name[g$type=="TF"],colnames(GSE211729))],pca[,model])
+    colnames(data1)[ncol(data1)]<-"Eigengene"
+    data2<-cbind(GSE211729[,intersect(g$name[g$type=="Gene"],colnames(GSE211729))],pca[,model])
+    colnames(data2)[ncol(data2)]<-"Eigengene"
+    cor<-corr.test(as.matrix(data1),as.matrix(data2[,rev(colnames(data2))]),method = "spearman")
     p<-ggcorrplot(cor$r,p.mat = cor$p,hc.order = F,outline.color = "white",
                   ggtheme = theme_bw(),sig.level = 0.05,insig = "blank",lab_size = 3,digits = 1,
                   colors = c("#6D9EC1","white","#E46726"),lab = T)+
